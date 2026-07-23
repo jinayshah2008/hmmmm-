@@ -587,11 +587,27 @@
 
   const surpriseBtn = document.getElementById('photoLabel');
 
-  surpriseBtn.addEventListener('click', ()=>{
+  // desktop: tap/hold anywhere in the box (mouse events only)
+  photoBox.addEventListener('click', ()=>{
     const s = slides[idx];
     if(photoBox.classList.contains('revealed') || s.holdReveal) return;
     revealCurrentPhoto();
   });
+  photoBox.addEventListener('mousedown', startHold);
+  photoBox.addEventListener('mouseup', cancelHold);
+  photoBox.addEventListener('mouseleave', cancelHold);
+
+  // mobile: the button gets dedicated touch handling so it works even if the
+  // page scrolls slightly during the tap (which can cancel a synthetic click)
+  surpriseBtn.addEventListener('touchstart', startHold, {passive:true});
+  surpriseBtn.addEventListener('touchend', (e)=>{
+    const s = slides[idx];
+    cancelHold();
+    if(!s.holdReveal){
+      e.preventDefault();
+      revealCurrentPhoto();
+    }
+  }, {passive:false});
 
   // press-and-hold reveal
   function startHold(){
@@ -620,11 +636,6 @@
       holdFill.style.width='0%';
     }
   }
-  surpriseBtn.addEventListener('mousedown', startHold);
-  surpriseBtn.addEventListener('touchstart', startHold, {passive:true});
-  surpriseBtn.addEventListener('mouseup', cancelHold);
-  surpriseBtn.addEventListener('mouseleave', cancelHold);
-  surpriseBtn.addEventListener('touchend', cancelHold);
 
   document.getElementById('enterBtn').addEventListener('click', ()=>{
     document.getElementById('landing').classList.add('hide');
