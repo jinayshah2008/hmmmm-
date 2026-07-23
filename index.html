@@ -11,7 +11,7 @@
     --ink:#1B1424; --paper:#FBF2E7; --rose-deep:#8C4550; --star:#EFE6FF;
   }
   *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;height:100%;}
+  html,body{margin:0;padding:0;height:100%;touch-action:manipulation;}
   body{
     background:radial-gradient(ellipse at 20% -10%, #33254a 0%, transparent 55%),
                radial-gradient(ellipse at 90% 110%, #241a38 0%, transparent 55%), var(--ink);
@@ -63,6 +63,7 @@
     filter:drop-shadow(0 10px 16px rgba(0,0,0,.45));
     animation:kittenIdle 3.2s ease-in-out infinite;
     transition:transform .25s cubic-bezier(.34,1.56,.64,1);
+    touch-action:manipulation;-webkit-tap-highlight-color:transparent;
   }
   @keyframes kittenIdle{0%,100%{transform:translateY(0) rotate(-2deg);}50%{transform:translateY(-6px) rotate(2deg);}}
   .kitten-photo.boop{animation:none !important;transform:scale(1.15) rotate(-6deg) !important;}
@@ -79,7 +80,7 @@
   .photo-box{
     width:100%;aspect-ratio:4/3;border-radius:22px;position:relative;overflow:hidden;
     cursor:pointer;box-shadow:0 20px 44px -16px rgba(0,0,0,.55);
-    user-select:none;-webkit-user-select:none;
+    user-select:none;-webkit-user-select:none;touch-action:none;-webkit-tap-highlight-color:transparent;
   }
   .photo-box .cover{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;transition:opacity .5s ease;}
   .photo-box .cover .icon{width:46px;height:46px;border-radius:50%;border:1.5px dashed rgba(255,255,255,.5);display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;}
@@ -548,7 +549,7 @@
       },1000);
     }
 
-    nextBtn.textContent = s.isLast ? 'the end ♥' : (s.endButton ? 'End' : 'next →');
+    nextBtn.textContent = s.isLast ? 'the end ♥' : 'next →';
   }
 
   nextBtn.addEventListener('click', ()=>{
@@ -583,6 +584,18 @@
     if(photoBox.classList.contains('revealed') || s.holdReveal) return;
     revealCurrentPhoto();
   });
+
+  // explicit touch handling — mobile browsers can swallow the synthetic click
+  // if the page scrolls even slightly during a tap, so handle touch directly too
+  let touchMoved = false;
+  photoBox.addEventListener('touchstart', ()=>{ touchMoved = false; }, {passive:true});
+  photoBox.addEventListener('touchmove', ()=>{ touchMoved = true; }, {passive:true});
+  photoBox.addEventListener('touchend', (e)=>{
+    const s = slides[idx];
+    if(s.holdReveal || touchMoved || photoBox.classList.contains('revealed')) return;
+    e.preventDefault();
+    revealCurrentPhoto();
+  }, {passive:false});
 
   // press-and-hold reveal
   function startHold(){
